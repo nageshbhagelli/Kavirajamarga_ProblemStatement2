@@ -1,0 +1,22 @@
+{
+  "ಮನೆ + ಅಂಗಳ": {
+    "result": "ಮನೆಯಂಗಳ",
+    "confidence": "high"
+  },
+  "ಮಹಾ + ಆತ್ಮ": {
+    "result": "ಮಹಾತ್ಮ",
+    "confidence": "high"
+  },
+  "ಪುಸ್ತಕ + ಆಲಯ": {
+    "result": "ಪುಸ್ತಕಾಲಯ",
+    "confidence": "high"
+  },
+  "ವಿದ್ಯಾ + ಆಲಯ": {
+    "result": "ವಿದ್ಯಾಲಯ",
+    "confidence": "high"
+  },
+  "ರಾಜ + ಶಿಕ್ಷಕ": {
+    "result": "ಮಹಾರಾಜ",
+    "confidence": "medium"
+  }
+}
