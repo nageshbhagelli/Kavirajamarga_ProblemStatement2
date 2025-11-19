@@ -1,5 +1,5 @@
 # Kannada Word Builder
-## Problem Statement [Number]: [Problem Statement Name]
+## Problem Statement 2: Kannada Word Builder & Validator
 ### Team Details
 - Team Name: Kavirajamarga
 - Team Members:
