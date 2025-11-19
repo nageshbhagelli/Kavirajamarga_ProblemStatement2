@@ -1,0 +1,7 @@
+﻿rule_name,suffix_to_drop,replacement_sound,example_input,example_root
+Tatpurusha_Genitive,ನ,ಅ,ಸೂರ್ಯನ,ಸೂರ್ಯ
+Tatpurusha_Genitive,ವಿನ,ಉ,ಮಗುವಿನ,ಮಗು
+Tatpurusha_Genitive,ಯ,ಇ,ನದಿಯ,ನದಿ
+Tatpurusha_Dative,ಗೆ,ಅ,ಮನೆಗೆ,ಮನೆ
+Dwigu_Number,ಮೂ,ಮೂ,ಮೂ,ಮೂ
+Dwigu_Number,ಇರ್,ಇರ್,ಇರ್,ಇರ್

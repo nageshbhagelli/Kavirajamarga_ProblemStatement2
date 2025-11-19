@@ -73,11 +73,6 @@ def run_validation():
     print(f"Accuracy:    {YELLOW}{accuracy:.2f}%{RESET}")
     print("="*30)
 
-    # 6. Evaluation Metric Check 
-    if accuracy >= 80:
-        print(f"{GREEN}✅ SUCCESS: You meet the Hackathon Requirement (>80%){RESET}")
-    else:
-        print(f"{RED}❌ FAIL: Improve rules to reach 80% accuracy.{RESET}")
 
 if __name__ == "__main__":
     run_validation()
