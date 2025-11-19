@@ -1,1 +1,11 @@
 ﻿test_id,word1,word2,expected_result,sandhi_rule_used,is_valid_compound
+1,ಮಹಾ,ಆತ್ಮ,ಮಹಾತ್ಮ,rule_2,yes
+2,ಮನೆ,ಕೆಲಸ,ಮನೆಕೆಲಸ,no_sandhi,yes
+3,ಪುಸ್ತಕ,ಆಲಯ,ಪುಸ್ತಕಾಲಯ,rule_1,yes
+4,ಗುರು,ಉಪದೇಶ,ಗುರೂಪದೇಶ,rule_4,yes
+5,ರಾಮ,ಆಲಯ,ರಾಮಾಲಯ,rule_1,yes
+6,ಮನೆ,ಅಂಗಳ,ಮನೆಯಂಗಳ,rule_3,yes
+7,ಸೂರ್ಯ,ಉದಯ,ಸೂರ್ಯೋದಯ,rule_6,yes
+8,ದೇವ,ಇಂದ್ರ,ದೇವೇಂದ್ರ,rule_5,yes
+9,ಹೊಸ್,ಗನ್ನಡ,ಹೊಸಗನ್ನಡ,rule_x,yes
+10,ಮಳೆ,ಗಾಲ,ಮಳೆಗಾಲ,rule_x,yes
