@@ -8,7 +8,7 @@ class KannadaWordBuilder:
         self.root_words = {}   
         self.sandhi_rules = [] 
         self.vibhakti_markers = {} 
-        self.samasa_rules = [] # NEW: Samasa Rules
+        self.samasa_rules = []
         self.fuzzy_engine = None
         self.hint_engine = HintGenerator()
         
@@ -18,47 +18,38 @@ class KannadaWordBuilder:
             self.fuzzy_engine = FuzzyMatcher(list(self.root_words.keys()))
 
     def _load_data(self):
-        """Loads all CSV databases"""
+        """Loads CSV data into memory"""
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         dict_dir = os.path.join(base_dir, 'dictionaries')
 
-        # 1. Load Root Words
-        path_root = os.path.join(dict_dir, 'root_words.csv')
-        if os.path.exists(path_root):
-            with open(path_root, 'r', encoding='utf-8-sig') as f:
-                reader = csv.DictReader(f)
-                for row in reader:
-                    self.root_words[row['word']] = row
-
-        # 2. Load Sandhi Rules
-        path_rules = os.path.join(dict_dir, 'sandhi_rules.csv')
-        if os.path.exists(path_rules):
-            with open(path_rules, 'r', encoding='utf-8-sig') as f:
-                reader = csv.DictReader(f)
-                for row in reader:
-                    self.sandhi_rules.append(row)
-
-        # 3. Load Vibhakti Rules
-        path_vibhakti = os.path.join(dict_dir, 'vibhakti_rules.csv')
-        if os.path.exists(path_vibhakti):
-            with open(path_vibhakti, 'r', encoding='utf-8-sig') as f:
-                reader = csv.DictReader(f)
-                for row in reader:
-                    self.vibhakti_markers[row['marker']] = row
-                    
-        # 4. Load Samasa Rules (NEW)
-        path_samasa = os.path.join(dict_dir, 'samasa_rules.csv')
-        if os.path.exists(path_samasa):
-            with open(path_samasa, 'r', encoding='utf-8-sig') as f:
-                reader = csv.DictReader(f)
-                for row in reader:
-                    self.samasa_rules.append(row)
+        # Load all CSVs (Root, Sandhi, Vibhakti, Samasa)
+        # [Same loading logic as before - abbreviated for clarity]
+        files = {
+            'root_words.csv': self.root_words,
+            'sandhi_rules.csv': self.sandhi_rules,
+            'vibhakti_rules.csv': self.vibhakti_markers,
+            'samasa_rules.csv': self.samasa_rules
+        }
+        
+        for filename, target in files.items():
+            path = os.path.join(dict_dir, filename)
+            if os.path.exists(path):
+                with open(path, 'r', encoding='utf-8-sig') as f:
+                    reader = csv.DictReader(f)
+                    for row in reader:
+                        if isinstance(target, dict):
+                            key = 'word' if 'word' in row else 'marker'
+                            target[row[key]] = row
+                        else:
+                            target.append(row)
 
     # --- SOUND HELPERS ---
     def _get_last_swara(self, word):
         if not word: return ''
+        # Check CSV first
         if word in self.root_words and self.root_words[word].get('last_sound', 'TODO') not in ['TODO', '']:
              return self.root_words[word]['last_sound']
+        
         swaras = {'ಾ': 'ಆ', 'ಿ': 'ಇ', 'ೀ': 'ಈ', 'ು': 'ಉ', 'ೂ': 'ಊ', 'ೆ': 'ಎ', 'ೇ': 'ಏ', 'ೊ': 'ಒ', 'ೋ': 'ಓ'}
         if word[-1] in swaras: return swaras[word[-1]]
         if 'ಅ' <= word[-1] <= 'ಔ': return word[-1]
@@ -71,91 +62,114 @@ class KannadaWordBuilder:
         if 'ಅ' <= char <= 'ಔ': return char
         return char
 
-    # --- SAMASA LOGIC (NEW) ---
+    # --- SAMASA LOGIC ---
     def _resolve_samasa(self, word1):
-        """
-        Checks if Word 1 has a case marker that needs dropping (Tatpurusha).
-        Returns: (RootWord, RuleName) or (None, None)
-        """
         for rule in self.samasa_rules:
             suffix = rule['suffix_to_drop']
-            
             if word1.endswith(suffix):
-                # Calculate potential root
-                # e.g., Suryana (ends in 'na') -> Remove 'na' -> Surya + 'a' (replacement)
-                # Logic: Strip suffix
                 base = word1[:-len(suffix)]
-                
-                # If replacement is simple (like 'a'), we usually just check if the base is valid
-                # Simplification: Just return the base if it exists in our dictionary
                 candidate_root = base
-                
-                # Special handling for 'vina' -> 'u' (Maguvina -> Magu)
                 if rule['replacement_sound'] == 'ಉ' and not base.endswith('ಉ'):
-                     candidate_root = base + 'ು' # Add 'u' matra
-                
-                # Verify if this 'root' exists in our dictionary
-                if candidate_root in self.root_words:
-                    return candidate_root, rule['rule_name']
-                
-                # If exact root not found, try fuzzy or trust the rule for specific cases
-                # For 'Suryana' -> 'Surya', the base 'Surya' is correct.
-                return base, rule['rule_name']
-                
+                     candidate_root = base + 'ು'
+                return candidate_root, rule['rule_name']
         return None, None
 
-    # --- VIBHAKTI LOGIC ---
+    # --- VIBHAKTI LOGIC (FIXED) ---
     def _apply_vibhakti(self, word, marker):
         last_sound = self._get_last_swara(word)
+        
+        # GROUP 0: Plurals (start with 'ga') - DIRECT APPEND
+        # Fixes: Mane + galige -> Manegalige
+        if marker.startswith("ಗ") and marker != "ಗೆ": 
+            return word + marker
+
+        # GROUP 1: Dative 'ge' (ಗೆ)
         if marker == 'ಗೆ':
+            # Rule: 'u' ending -> 'vige' (Magu -> Maguvige)
             if last_sound in ['ಉ', 'ಊ']: return word + "ವಿಗೆ"
+            # Rule: 'a' ending (Neuter) -> 'kke' (Sthala -> Sthalakke)
+            # Note: We assume 'a' ending nouns here are mostly neuter for this logic
+            if last_sound == 'ಅ': return word + "ಕ್ಕೆ" 
+            # Rule: 'i', 'e' -> 'ge' (Mane -> Manege)
             return word + "ಗೆ"
-        if marker in ['ಅಲ್ಲಿ', 'ಇಂದ', 'ಅನ್ನು']:
-            if last_sound == 'ಅ':
-                if marker == 'ಅನ್ನು': return word + "ವನ್ನು"
-                if marker == 'ಅಲ್ಲಿ': return word + "ದಲ್ಲಿ"
-                return word + "ವ" + marker
-            if last_sound in ['ಎ', 'ಏ', 'ಇ', 'ಈ']:
-                if marker == 'ಅಲ್ಲಿ': return word + "ಯಲ್ಲಿ"
-                if marker == 'ಇಂದ': return word + "ಯಿಂದ"
-                if marker == 'ಅನ್ನು': return word + "ಯನ್ನು"
+
+        # GROUP 2: Genitive 'da' (ದ)
+        # Fixes: Mane + da -> Maneya, Kashi + da -> Kashiya
+        if marker == 'ದ':
+            if last_sound in ['ಇ', 'ಈ', 'ಎ', 'ಏ']: return word + "ಯ"
+            if last_sound in ['ಉ', 'ಊ']: return word + "ವಿನ"
+            if last_sound == 'ಅ': return word + "ದ" # Pustaka -> Pustakada
+            return word + "ದ"
+
+        # GROUP 3: Associative 'jote' (ಜೊತೆ)
+        # Fixes: Mane + jote -> Maneya jote (Requires Genitive first)
+        if marker == 'ಜೊತೆ':
+            # Recursively apply 'da' (Genitive) logic first, then add ' jote'
+            genitive_form = self._apply_vibhakti(word, 'ದ')
+            return genitive_form + " ಜೊತೆ"
+
+        # GROUP 4: Agama (alli, inda, annu, olage, particle 'ee'/'oo')
+        # Markers that start with vowels usually trigger Agama
+        agama_markers = ['ಅಲ್ಲಿ', 'ಇಂದ', 'ಅನ್ನು', 'ಒಳಗೆ', 'ಏ', 'ಓ']
+        if marker in agama_markers:
+            
+            # SUB-RULE: 'u' ending special case for 'inda'/'alli'
+            # Fixes: Magu + inda -> Maguvininda (adds 'in')
             if last_sound in ['ಉ', 'ಊ']:
-                if marker == 'ಇಂದ': return word + "ವಿಂದ"
-                if marker == 'ಅನ್ನು': return word + "ವನ್ನು"
+                if marker == 'ಇಂದ': return word + "ವಿನಿಂದ"
                 if marker == 'ಅಲ್ಲಿ': return word + "ವಿನಲ್ಲಿ"
+                if marker == 'ಅನ್ನು': return word + "ವನ್ನು" # Maguvannu
+                if marker == 'ಒಳಗೆ': return word + "ವೊಳಗೆ"
+
+            # SUB-RULE: 'a' ending special case (d-agama for neuter)
+            # Fixes: Sthala + alli -> Sthaladalli
+            if last_sound == 'ಅ':
+                if marker == 'ಅಲ್ಲಿ': return word + "ದಲ್ಲಿ"
+                if marker == 'ಇಂದ': return word + "ದಿಂದ"
+                if marker == 'ಒಳಗೆ': return word + "ದೊಳಗೆ"
+                if marker == 'ಅನ್ನು': return word + "ವನ್ನು"
+                # For particles like 'ee', use 'n' (Rama -> Ramane)
+                if marker == 'ಏ': return word + "ನೇ"
+                if marker == 'ಓ': return word + "ನೋ"
+
+            # SUB-RULE: 'i', 'e' ending (y-agama)
+            # Fixes: Mane + olage -> Maneyolage
+            if last_sound in ['ಇ', 'ಈ', 'ಎ', 'ಏ']:
+                # Map vowel start to Matra
+                # a->ya, i->yi, u->yu, e->ye, o->yo
+                y_joiner = "ಯ"
+                
+                # Map marker first char to matra
+                marker_map = {
+                    'ಅ': '', 'ಆ': 'ಾ', 'ಇ': 'ಿ', 'ಈ': 'ೀ', 'ಉ': 'ು', 'ಊ': 'ೂ',
+                    'ಎ': 'ೆ', 'ಏ': 'ೇ', 'ಒ': 'ೊ', 'ಓ': 'ೋ'
+                }
+                matra = marker_map.get(marker[0], '')
+                marker_stub = marker[1:] # remove first vowel char
+                
+                return word + y_joiner + matra + marker_stub
+
+        # Default Fallback
         return word + marker
 
     # --- MAIN JOINER ---
     def join_words(self, word1, word2):
-        processing_log = []
-        
-        # 1. VALIDATION
-        if word1 not in self.root_words and self.fuzzy_engine:
-            # In a real app, handle fuzzy logic here
-            pass
-
-        # 2. VIBHAKTI CHECK (Word 2 is a suffix)
-        if word2 in self.vibhakti_markers:
+        # 1. CHECK: Is Word 2 a Case Marker?
+        # Check explicit list OR generic ending (like 'galu')
+        if word2 in self.vibhakti_markers or word2.startswith("ಗಳ"):
             result = self._apply_vibhakti(word1, word2)
             return {'result': result, 'status': 'success', 'rule': f"Vibhakti: {word2}"}
 
-        # 3. SAMASA CHECK (Pre-processing Word 1) [NEW STEP]
-        # Does Word 1 look like 'Suryana' instead of 'Surya'?
+        # 2. SAMASA CHECK
         root_word1, samasa_rule = self._resolve_samasa(word1)
+        final_word1 = root_word1 if root_word1 else word1
         
-        final_word1 = word1
-        if root_word1:
-            final_word1 = root_word1
-            processing_log.append(f"Samasa: Converted '{word1}' -> '{root_word1}' (Dropped case)")
-        
-        # 4. EXACT MATCH (Sandhi)
+        # 3. EXACT MATCH
         for rule in self.sandhi_rules:
             if rule['example_word1'] == final_word1 and rule['example_word2'] == word2:
-                msg = f"Direct Match (Rule {rule['rule_number']})"
-                if processing_log: msg += f" + {processing_log[0]}"
-                return {'result': rule['combined_result'], 'status': 'success', 'rule': msg}
+                return {'result': rule['combined_result'], 'status': 'success', 'rule': f"Direct Match (Rule {rule['rule_number']})"}
 
-        # 5. PHONETIC SANDHI
+        # 4. PHONETIC SANDHI
         sound1 = self._get_last_swara(final_word1)
         sound2 = self._get_first_swara(word2)
         matched_rule = None
@@ -167,44 +181,33 @@ class KannadaWordBuilder:
 
         if matched_rule:
             result_sound = matched_rule['result']
-            
-            # AGAMA
+            # Agama
             if result_sound in ['ಯ', 'ವ']:
                 w2_stub = word2[1:] if 'ಅ' <= word2[0] <= 'ಔ' else word2
                 vowel_map = {'ಅ':'','ಆ':'ಾ','ಇ':'ಿ','ಈ':'ೀ','ಉ':'ು','ಊ':'ೂ','ಎ':'ೆ','ಏ':'ೇ'}
                 matra = vowel_map.get(sound2, '')
                 final_word = final_word1 + result_sound + matra + w2_stub
-            
-            # LOPA/GUNA/ADESA
+            # Lopa/Guna
             else:
                 base_w1 = final_word1
                 if final_word1[-1] in ['ಾ','ಿ','ೀ','ು','ೂ','ೆ','ೇ','ೊ','ೋ','್']:
                     base_w1 = final_word1[:-1]
-                
                 base_w2 = word2
-                if 'ಅ' <= word2[0] <= 'ಔ':
-                    base_w2 = word2[1:]
-                
+                if 'ಅ' <= word2[0] <= 'ಔ': base_w2 = word2[1:]
                 vowel_to_matra = {
-                    'ಆ': 'ಾ', 'ಇ': 'ಿ', 'ಈ': 'ೀ', 'ಉ': 'ು', 'ಊ': 'ೂ',
-                    'ಎ': 'ೆ', 'ಏ': 'ೇ', 'ಐ': 'ೈ', 'ಒ': 'ೊ', 'ಓ': 'ೋ', 'ಔ': 'ೌ', 'ಗ': 'ಗ'
+                    'ಆ': 'ಾ', 'ಇ': 'ಿ', 'ಈ': 'ೀ', 'ಉ': 'ು', 'ಊ': 'ೂ', 'ಎ': 'ೆ', 'ಏ': 'ೇ', 'ಐ': 'ೈ', 'ಒ': 'ೊ', 'ಓ': 'ೋ', 'ಔ': 'ೌ', 'ಗ': 'ಗ'
                 }
                 mid_char = vowel_to_matra.get(result_sound, result_sound)
                 final_word = base_w1 + mid_char + base_w2
 
-            rule_msg = f"Sandhi Rule: {sound1}+{sound2}={result_sound}"
-            if processing_log: rule_msg = f"{processing_log[0]} -> {rule_msg}"
-            
-            return {'result': final_word, 'status': 'success', 'rule': rule_msg}
+            return {'result': final_word, 'status': 'success', 'rule': f"Sandhi Rule: {sound1}+{sound2}={result_sound}"}
 
-        # Fallback
-        return {'result': word1 + word2, 'status': 'warning', 'msg': 'No Sandhi rule found, joined directly.'}
+        return {'result': word1 + word2, 'status': 'warning', 'msg': 'No Sandhi rule found'}
 
 if __name__ == "__main__":
     builder = KannadaWordBuilder()
-    print("--- Kannada Word Builder (Samasa + Sandhi + vibhakti pratyeya) ---")
+    print("--- Kannada Word Builder (Final v3) ---")
     w1 = input("Word 1: ")
     w2 = input("Word 2: ")
     out = builder.join_words(w1, w2)
     print(f"Result: {out['result']}")
-    print(f"Logic: {out.get('rule', 'Direct Join')}")

@@ -1,8 +1,22 @@
 ﻿marker,meaning,type,logic_type
 ಗೆ,to,dative,suffix
+ಕ್ಕೆ,to (euphonic form),dative,suffix
 ಅಲ್ಲಿ,in,locative,agama_sandhi
-ಇಂದ,from,instrumental,agama_sandhi
-ಅನ್ನು,object,accusative,agama_sandhi
-ದ,of,genitive,suffix
-ಕೆ,to,dative,suffix
+ನಲ್ಲಿ,in/at,locative,agama_sandhi
 ಒಳಗೆ,inside,locative,agama_sandhi
+ಇಂದ,from/by,instrumental/ablative,agama_sandhi
+ಅನ್ನು,object,accusative,agama_sandhi
+ವನ್ನು,object (after vowel),accusative,agama_sandhi
+ಗಳನ್ನು,in (plural),locative,agama_sandhi
+ಗಳನ್ನು,to (plural),dative,agama_sandhi
+ಗಳಿಂದ,from (plural),ablative,agama_sandhi
+ದ,of,genitive,suffix
+ರ,of (animate masc),genitive,suffix
+ಯ,of (vowel-ending nouns),genitive,suffix
+ಜೊತೆ,with,sociative,agama_sandhi
+ಸಮೇತ,along with,sociative,agama_sandhi
+ಗೆ,to,ಮನೆ,add_ge,ಮನೆಗೆ
+ಅಲ್ಲಿ,in,ಮನೆ,add_y_then_alli,ಮನೆಯಲ್ಲಿ
+ಇಂದ,from,ಮನೆ,add_y_then_inda,ಮನೆಯಿಂದ
+ಅನ್ನು,object,ಪುಸ್ತಕ,add_v_then_annu,ಪುಸ್ತಕವನ್ನು
+ದ,possessive,ಮರ,add_da,ಮರದ
